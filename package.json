@@ -1,0 +1,48 @@
+{
+  "name": "dsh-custom-menu",
+  "version": "0.9.0",
+  "description": "Sidebar organizer for DeepSeek Harness: hide or group built-in menu entries, and add your own web links or local folders to the sidebar.",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "assets",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "author": "tan90tan90",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "sidebar",
+    "menu",
+    "bookmark",
+    "launcher"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tan90tan90/dsh-custom-menu.git"
+  },
+  "homepage": "https://github.com/tan90tan90/dsh-custom-menu#readme",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "slots"
+      ],
+      "external": [
+        "react"
+      ]
+    }
+  }
+}

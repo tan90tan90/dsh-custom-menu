@@ -1,0 +1,4 @@
+# dsh-custom-menu bundle layer.
+- insert:
+    - id: custom-menu
+      name: dsh-custom-menu
