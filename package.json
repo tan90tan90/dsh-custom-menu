@@ -1,7 +1,7 @@
 {
   "name": "dsh-custom-menu",
-  "version": "0.9.0",
-  "description": "Sidebar organizer for DeepSeek Harness: hide or group built-in menu entries, and add your own web links or local folders to the sidebar.",
+  "version": "0.9.1",
+  "description": "Sidebar launcher for DeepSeek Harness: pin web pages and local folders to the sidebar — one click opens a link in a new tab or a folder in your file manager. Also groups and hides built-in entries.",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
@@ -22,9 +22,13 @@
     "dsh-plugin",
     "deepseek-harness",
     "sidebar",
-    "menu",
+    "launcher",
+    "local-folder",
+    "folder-shortcut",
+    "explorer",
+    "file-manager",
     "bookmark",
-    "launcher"
+    "menu"
   ],
   "repository": {
     "type": "git",
