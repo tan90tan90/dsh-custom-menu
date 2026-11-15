@@ -107,11 +107,32 @@ After installing, **restart DSH**, then open **Settings → 自定义菜单**.
 
 - 设置页通过宿主的 `settings.section` 槽注册，客户端用官方的 `window.__ModuleLoader__.load` 约定加载。
 - 侧栏行是「装饰」出来的，不是搬动机有的 React 节点：插件把自己的行作为面板列的直接子节点追加，隐藏用 `display: none`，排序在自己插入的节点之间用 DOM 顺序完成（该列不是 flex 容器，CSS `order` 无效）。`MutationObserver` 在宿主重渲染后补写，并带内容签名与自身写入的抑制标记，避免反复插入。
-- **打开本地文件夹走宿主路由 `POST /dsh-custom-menu/open`**：只接受绝对路径（`^[A-Za-z]:[\\/]` 或 UNC），先 `existsSync` 校验再启动进程，参数以数组传递、不经过 shell，没有拼接注入的空间。Windows 上 `explorer.exe` 成功时也可能返回退出码 1，所以**只判定进程是否启动，不看退出码**。
-- 所有配置都存在浏览器 `localStorage`，插件不往 DSH 的 profile 文件里写任何东西。
+- **打开本地文件夹走宿主路由 `POST /dsh-custom-menu/open`**：只接受绝对路径（`^[A-Za-z]:[\\/]` 或 UNC）且**必须是已存在的目录**，参数以数组传递、不经过 shell。Windows 上 `explorer.exe` 成功时也可能返回退出码 1，所以**只判定进程是否启动，不看退出码**。请求需要一次性令牌，详见下面的[安全](#security--安全)一节。
 
-- Opening a local folder goes through a host route. Only absolute paths are accepted, the path must exist, arguments are passed as an array (no shell interpolation). On Windows `explorer.exe` can return exit code 1 even on success, so the spawn is treated as fire-and-forget.
-- Config lives in `localStorage`; nothing is written into DSH profile files.
+- Opening a local folder goes through a host route. Only absolute paths are accepted, the target must be an existing **directory**, and arguments are passed as an array (no shell interpolation). On Windows `explorer.exe` can return exit code 1 even on success, so the spawn is treated as fire-and-forget. Requests need a one-time token — see [Security](#security--安全).
+
+---
+
+## Security / 安全
+
+从 v0.9.2 起，那个「打开文件夹」的宿主路由不再是裸接口。它现在要过四道门：
+
+Since v0.9.2 the open-folder host route is no longer a bare endpoint. A request must clear four gates:
+
+| | 约束 | Why |
+|---|---|---|
+| 1 | **一次性令牌**：`GET /dsh-custom-menu/token` 领取，`X-CM-Token` 头带上，用一次即失效（60 秒过期） | 跨站页面读不到同源响应正文，也就伪造不出请求 |
+| 2 | **来源校验**：`Sec-Fetch-Site: cross-site` 直接 403；`Origin` 若是 http(s) 源，必须与 `Host` 一致 | 挡住「浏览器里随便打开一个网页就能调用本机接口」 |
+| 3 | **`Content-Type: application/json`** | 跨站表单提交发不出这个类型，只能走被 CORS 拦下的 fetch |
+| 4 | **只允许目录**（`statSync().isDirectory()`），文件一律拒绝 | 堵掉把本地已存在的可执行文件交给默认程序打开这条路 |
+
+其余同上：绝对路径白名单、路径存在性检查、参数数组传参不经过 shell、响应带 `X-Content-Type-Options: nosniff`、不留 CORS 头。
+
+回归测试不需要启动 DSH：`node test/smoke-route.mjs`（10 个用例，覆盖上面四道门 + 一次令牌一次的语义）。
+
+Regression test without booting DSH: `node test/smoke-route.mjs` — 10 cases covering the four gates above plus single-use token semantics.
+
+所有配置都存在浏览器 `localStorage`，插件不往 DSH 的 profile 文件里写任何东西。Config lives in `localStorage`; nothing is written into DSH profile files.
 
 ---
 
@@ -127,6 +148,7 @@ After installing, **restart DSH**, then open **Settings → 自定义菜单**.
 - 侧栏行按标签定位，DSH 大改侧栏结构时可能需要调整 `lib/client.js` 里的 `KNOWN_LABELS`。
 - 只支持 `http(s)` 链接和绝对本地路径，不支持自定义 URI scheme。
 - 隐藏只是视觉隐藏，被隐藏的入口仍然可以经由它自己的菜单位置访问。
+- **只能打开文件夹，不能打开文件**：宿主侧只放行目录，这是刻意的安全取舍——把任意文件交给默认程序打开，等于给 web 页面一条执行本机程序的路径。
 - 不做内嵌浏览：点开就是交给外部浏览器或系统文件管理器。
 
 ---
